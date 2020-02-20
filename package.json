@@ -1,7 +1,7 @@
 {
   "name": "sequence-crdt",
   "version": "0.0.1",
-  "main": "build/index.js",
+  "main": "build/crdt.js",
   "repository": "git@github.com:0xGG/sequence-crdt.git",
   "author": "Yiyi Wang <shd101wyy@gmail.com>",
   "license": "MIT",

@@ -3,9 +3,9 @@ export default class Version {
   public counter: number;
   public exceptions: number[];
 
-  constructor(siteID: string) {
+  constructor(siteID: string, counter = 0) {
     this.siteID = siteID;
-    this.counter = 0;
+    this.counter = counter;
     this.exceptions = [];
   }
 

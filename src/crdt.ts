@@ -1,6 +1,7 @@
 import VersionVector from "./versionVector";
 import Char from "./char";
 import Identifier from "./identifier";
+import Version from "./version";
 
 export function generateUUID() {
   // Public Domain/MIT
@@ -39,6 +40,7 @@ export class CRDT {
   private strategy: Strategy;
   private strategyCache: Strategy[];
   private mult: number;
+  private delBuffer: Char[];
   constructor({
     siteID = generateUUID(),
     base = 32,
@@ -57,59 +59,72 @@ export class CRDT {
     this.mult = mult;
   }
 
-  public handleLocalInsert(
-    index: number,
-    val: string,
-    cb?: (char: Char) => void
-  ) {
+  public handleLocalInsert(index: number, val: string): Char {
     this.vector.increment();
 
     const char = this.generateChar(val, index);
     this.insertChar(index, char);
     this.insertText(index, char.value);
-
-    // callback
-    if (cb) {
-      cb(char);
-    }
+    return char;
   }
 
-  public handleRemoteInsert(
-    char: Char,
-    cb?: (index: number, char: Char) => void
-  ) {
-    const index = this.findInsertIndex(char);
+  public handleRemoteInsert(char: Char) {
+    if (this.vector.hasBeenApplied(new Version(char.siteID, char.counter))) {
+      return;
+    }
+
+    const index = this.findInsertionIndex(char);
 
     this.insertChar(index, char);
     this.insertText(index, char.value);
 
-    if (cb) {
-      cb(index, char);
-    }
+    // Update version
+    this.vector.update(new Version(char.siteID, char.counter));
+
+    // Process deletion buffer
+    this.processDeletionBuffer();
   }
 
-  public handleLocalDelete(index: number, cb?: (char: Char) => void) {
+  public handleLocalDelete(index: number): Char {
     this.vector.increment();
 
     const char = this.struct.splice(index, 1)[0];
     this.deleteText(index);
-
-    if (cb) {
-      cb(char);
-    }
+    return char;
   }
 
-  public handleRemoteDelete(
-    char: Char,
-    cb?: (index: number, char: Char) => void
-  ) {
-    const index = this.findIndexByPosition(char);
+  public handleRemoteDelete(char: Char) {
+    // if (this.vector.hasBeenApplied(new Version(char.siteID, char.counter))) {
+    //   return;
+    // }
+
+    const index = this.findDeletionIndex(char);
+    if (index < 0) {
+      this.delBuffer.push(char);
+      return;
+    }
 
     this.struct.splice(index, 1);
     this.deleteText(index);
 
-    if (cb) {
-      return cb(index, char);
+    // Update version
+    this.vector.update(new Version(char.siteID, char.counter));
+  }
+
+  private processDeletionBuffer() {
+    let i = 0;
+    while (i < this.delBuffer.length) {
+      const deleteChar = this.delBuffer[i];
+      if (
+        this.vector.hasBeenApplied(
+          new Version(deleteChar.siteID, deleteChar.counter)
+        )
+      ) {
+        this.handleRemoteDelete(deleteChar);
+        this.delBuffer.splice(i, 1);
+      } else {
+        i++;
+      }
     }
   }
 
@@ -123,6 +138,10 @@ export class CRDT {
 
   private deleteText(index: number) {
     this.text = this.text.slice(0, index) + this.text.slice(index + 1);
+  }
+
+  public populateText() {
+    this.text = this.struct.map(char => char.value).join("");
   }
 
   private generateChar(val: string, index: number): Char {
@@ -224,7 +243,7 @@ export class CRDT {
     return Math.floor(Math.random() * (max - min)) + min;
   }
 
-  private findInsertIndex(char: Char) {
+  private findInsertionIndex(char: Char) {
     let left = 0;
     let right = this.struct.length - 1;
     let mid: number, compareNum: number;
@@ -248,13 +267,14 @@ export class CRDT {
     return char.compareTo(this.struct[left]) === 0 ? left : right;
   }
 
-  private findIndexByPosition(char: Char) {
+  private findDeletionIndex(char: Char) {
     let left = 0;
     let right = this.struct.length - 1;
     let mid, compareNum;
 
     if (this.struct.length === 0) {
-      throw new Error("Character does not exist in CRDT.");
+      return -1;
+      // throw new Error("Character does not exist in CRDT.");
     }
 
     while (left + 1 < right) {
@@ -275,7 +295,8 @@ export class CRDT {
     } else if (char.compareTo(this.struct[right]) === 0) {
       return right;
     } else {
-      throw new Error("Character does not exist in CRDT.");
+      return -1;
+      // throw new Error("Character does not exist in CRDT.");
     }
   }
 }
