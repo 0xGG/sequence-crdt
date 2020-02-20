@@ -3,23 +3,10 @@ import Char from "./char";
 import Identifier from "./identifier";
 import Version from "./version";
 
-export function generateUUID() {
-  // Public Domain/MIT
-  var d = new Date().getTime(); //Timestamp
-  var d2 = (performance && performance.now && performance.now() * 1000) || 0; //Time in microseconds since page-load or 0 if unsupported
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
-    var r = Math.random() * 16; //random number between 0 and 16
-    if (d > 0) {
-      //Use timestamp until depleted
-      r = (d + r) % 16 | 0;
-      d = Math.floor(d / 16);
-    } else {
-      //Use microseconds since page-load if supported
-      r = (d2 + r) % 16 | 0;
-      d2 = Math.floor(d2 / 16);
-    }
-    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
-  });
+export function randomID() {
+  return Math.random()
+    .toString(36)
+    .substr(2, 9);
 }
 
 export enum Strategy {
@@ -28,6 +15,15 @@ export enum Strategy {
   Random = "Random",
   Every2nd = "Every2nd",
   Every3rd = "Every3rd"
+}
+
+export interface CRDTOptions {
+  siteID: string;
+  struct?: Char[];
+  base?: number;
+  boundary?: number;
+  strategy?: Strategy;
+  mult?: number;
 }
 
 export class CRDT {
@@ -42,21 +38,23 @@ export class CRDT {
   private mult: number;
   private delBuffer: Char[];
   constructor({
-    siteID = generateUUID(),
+    siteID = randomID(),
+    struct = [],
     base = 32,
     boundary = 10,
     strategy = Strategy.Random,
     mult = 2
-  }) {
+  }: CRDTOptions) {
     this.siteID = siteID;
     this.vector = new VersionVector(this.siteID);
-    this.struct = [];
+    this.struct = struct;
     this.text = "";
     this.base = base;
     this.boundary = boundary;
     this.strategy = strategy;
     this.strategyCache = [];
     this.mult = mult;
+    this.delBuffer = [];
   }
 
   public handleLocalInsert(index: number, val: string): Char {
@@ -142,6 +140,7 @@ export class CRDT {
 
   public populateText() {
     this.text = this.struct.map(char => char.value).join("");
+    return this.text;
   }
 
   private generateChar(val: string, index: number): Char {
