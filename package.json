@@ -1,0 +1,12 @@
+{
+  "name": "sequence-crdt",
+  "version": "0.0.1",
+  "main": "build/index.js",
+  "repository": "git@github.com:0xGG/sequence-crdt.git",
+  "author": "Yiyi Wang <shd101wyy@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "tslib": "^1.10.0",
+    "typescript": "^3.7.5"
+  }
+}
