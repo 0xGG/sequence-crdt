@@ -2,9 +2,15 @@
 
 sequence CRDT
 
+## Installation
+
+```bash
+$ npm install sequence-crdt
+```
+
 ## Usages
 
-Check _example.js_ file
+Check `example.js` file
 
 ```typescript
 import { CRDT, randomID, Char } from "sequence-crdt";
