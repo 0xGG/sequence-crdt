@@ -1,6 +1,6 @@
 {
   "name": "sequence-crdt",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "build/index.js",
   "repository": "git@github.com:0xGG/sequence-crdt.git",
   "author": "Yiyi Wang <shd101wyy@gmail.com>",
@@ -11,7 +11,8 @@
   },
   "scripts": {
     "build": "tsc --project .",
-    "build:watch": "tsc --project . --watch"
+    "build:watch": "tsc --project . --watch",
+    "prepare": "npm run build"
   },
   "files": [
     "build"

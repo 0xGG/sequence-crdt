@@ -9,6 +9,7 @@ console.log(docA.text); // => Hi
 // Peer B
 const docB = new CRDT({ siteID: randomID() });
 docB.handleRemoteInsert(char1);
+docB.handleRemoteInsert(char1); // <= Will not duplicate
 docB.handleRemoteInsert(char2);
 console.log(docB.text); // => Hi
 
