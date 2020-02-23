@@ -13,7 +13,9 @@ export default class Version {
     const incomingCounter = version.counter;
     if (incomingCounter <= this.counter) {
       const index = this.exceptions.indexOf(incomingCounter);
-      this.exceptions.splice(index, 1);
+      if (index >= 0) {
+        this.exceptions.splice(index, 1);
+      }
     } else if (incomingCounter === this.counter + 1) {
       this.counter = this.counter + 1;
     } else {
